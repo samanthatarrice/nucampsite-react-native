@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
-import { FlatList, View, List } from 'react-native';
+import { FlatList, View, Text, Alert, StyleSheet } from 'react-native';
 import { ListItem } from 'react-native-elements';
+import { SwipeRow } from 'react-native-swipe-list-view';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { connect } from 'react-redux';
+import { deleteFavorite } from '../redux/ActionCreators';
 import { Loading } from './LoadingComponent';
 import { baseUrl } from '../shared/baseUrl';
 
@@ -12,6 +15,10 @@ const mapStateToProps = state => {
   }
 };
 
+const mapDispatchToProps = {
+  deleteFavorite: campsiteId => deleteFavorite(campsiteId)
+};
+
 class Favorites extends Component {
 
   static navigationOptions = {
@@ -19,16 +26,44 @@ class Favorites extends Component {
   }
 
   render() {
-
     const { navigate } = this.props.navigation;
     const renderFavoriteItem = ({item}) => {
       return (
-        <ListItem
-          title={item.name}
-          subtitle={item.description}
-          leftAvatar={{source: {uri: baseUrl + item.image}}}
-          onPress={() => navigate('CampsiteInfo', {campsiteId: item.id})}
-        />
+        <SwipeRow rightOpenValue={-100} style={StyleSheet.SwipeRow}>
+          <View style={styles.deleteView}>
+            <TouchableOpacity
+              style={styles.deleteTouchable}
+              onPress={() =>
+                Alert.alert(
+                  'Delete Favorite?',
+                  'Are you sure you wish to delete the favorite campsite ' + item.name + '?',
+                  [
+                    {
+                      text: 'Cancel',
+                      onPress: () => console.log(item.name + 'Not Deleted'),
+                      style: 'cancel'
+                    },
+                    {
+                      text: 'OK',
+                      onPress: () => this.props.deleteFavorite(item.id)
+                    },
+                  ],
+                  { cancelable: false }
+                )
+            }
+            >
+              <Text style={styles.deleteText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+          <View>
+            <ListItem
+              title={item.name}
+              subtitle={item.description}
+              leftAvatar={{source: {uri: baseUrl + item.image}}}
+              onPress={() => navigate('CampsiteInfo', {campsiteId: item.id})}
+            />
+          </View>
+        </SwipeRow>
       );
     }
 
@@ -54,4 +89,25 @@ class Favorites extends Component {
   }
 }
 
-export default connect(mapStateToProps)(Favorites);
+const styles = StyleSheet.create({
+  deleteView: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      flex: 1
+  },
+  deleteTouchable: {
+      backgroundColor: 'red',
+      height: '100%',
+      justifyContent: 'center'
+  },
+  deleteText: {
+      color: 'white',
+      fontWeight: '700',
+      textAlign: 'center',
+      fontSize: 16,
+      width: 100
+  }
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Favorites);
